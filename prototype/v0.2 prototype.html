@@ -1,0 +1,2451 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>课管助手 v2 - 大学生课程管理小程序原型</title>
+<style>
+:root {
+  --primary: #4F6DF5;
+  --primary-light: #EEF1FE;
+  --primary-dark: #3B55CC;
+  --accent: #FF6B6B;
+  --accent-light: #FFF0F0;
+  --success: #22C55E;
+  --success-light: #DCFCE7;
+  --warning: #F59E0B;
+  --bg: #F5F6FA;
+  --card: #FFFFFF;
+  --text: #1A1D29;
+  --text-secondary: #6B7280;
+  --text-light: #9CA3AF;
+  --border: #E5E7EB;
+  --radius: 12px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+/* Theme: Minimal Dark */
+.theme-dark {
+  --bg: #1A1A2E;
+  --card: #252542;
+  --text: #E8E8F0;
+  --text-secondary: #A0A0C0;
+  --text-light: #6B6B8A;
+  --border: #3A3A5C;
+  --primary-light: #2A2A50;
+}
+
+/* Theme: Forest */
+.theme-forest {
+  --bg: #F0F7F0;
+  --card: #FFFFFF;
+  --primary: #2D8B56;
+  --primary-light: #E0F0E6;
+  --primary-dark: #1E6B3E;
+}
+
+/* Theme: Sunset */
+.theme-sunset {
+  --bg: #FFF5F0;
+  --card: #FFFFFF;
+  --primary: #E8743B;
+  --primary-light: #FFE8DB;
+  --primary-dark: #C85A25;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 20px 0;
+}
+
+.phone-frame {
+  width: 390px;
+  height: 844px;
+  background: var(--bg);
+  border-radius: 40px;
+  overflow: hidden;
+  box-shadow: 0 0 0 12px #1a1a1a, 0 0 0 14px #333, 0 30px 80px rgba(0,0,0,0.4);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  transition: background .3s;
+}
+
+/* Status Bar */
+.status-bar {
+  height: 44px;
+  background: var(--card);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+}
+.status-bar .time { font-size: 15px; font-weight: 600; }
+.status-bar .icons { display: flex; gap: 6px; align-items: center; }
+
+.notch {
+  position: absolute;
+  top: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 150px; height: 30px;
+  background: #1a1a1a;
+  border-radius: 0 0 18px 18px;
+  z-index: 20;
+}
+
+/* App Header */
+.app-header {
+  background: var(--card);
+  padding: 8px 20px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+}
+.app-header h1 { font-size: 18px; font-weight: 700; color: var(--text); }
+.app-header .header-actions { display: flex; gap: 10px; }
+.header-btn {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: var(--primary-light);
+  color: var(--primary);
+  font-size: 15px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .2s;
+}
+.header-btn:hover { background: var(--primary); color: #fff; }
+
+/* Content Area */
+.content-area {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+.content-area::-webkit-scrollbar { width: 3px; }
+.content-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+/* Page System */
+.page { display: none; padding: 12px 14px 80px; }
+.page.active { display: block; }
+
+/* Bottom Tab Bar */
+.tab-bar {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 70px;
+  background: var(--card);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  border-top: 1px solid var(--border);
+  padding-bottom: 10px;
+  z-index: 100;
+}
+.tab-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+  transition: all .2s;
+  flex: 1;
+  padding: 4px 0;
+}
+.tab-icon { font-size: 22px; opacity: 0.5; transition: all .2s; }
+.tab-label { font-size: 10px; color: var(--text-light); font-weight: 500; transition: all .2s; }
+.tab-item.active .tab-icon { opacity: 1; transform: scale(1.1); }
+.tab-item.active .tab-label { color: var(--primary); font-weight: 600; }
+
+/* ============================================
+   课表页 - 周视图
+   ============================================ */
+
+/* 名言警句 */
+.quote-banner {
+  background: linear-gradient(135deg, var(--primary), #7B5CF5);
+  border-radius: 12px;
+  padding: 14px 16px;
+  color: #fff;
+  margin-bottom: 12px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all .2s;
+}
+.quote-banner:hover { transform: translateY(-1px); }
+.quote-banner::before {
+  content: '"';
+  position: absolute;
+  right: 12px; top: -5px;
+  font-size: 50px;
+  opacity: 0.15;
+  font-family: Georgia, serif;
+}
+.quote-text {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.5;
+  font-style: italic;
+}
+.quote-author {
+  font-size: 10px;
+  opacity: 0.75;
+  margin-top: 4px;
+  text-align: right;
+}
+
+/* 周课表 */
+.week-schedule {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 8px 6px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow);
+}
+.schedule-header {
+  display: grid;
+  grid-template-columns: 28px repeat(7, 1fr);
+  gap: 2px;
+  margin-bottom: 4px;
+}
+.schedule-header-day {
+  text-align: center;
+  font-size: 9px;
+  color: var(--text-light);
+  font-weight: 500;
+  padding: 4px 0;
+}
+.schedule-header-day.today { color: var(--primary); font-weight: 700; }
+.schedule-header-day .day-num {
+  display: block;
+  font-size: 12px;
+  color: var(--text);
+  margin-top: 1px;
+}
+.schedule-header-day.today .day-num { color: var(--primary); }
+
+.schedule-body {
+  display: grid;
+  grid-template-columns: 28px repeat(7, 1fr);
+  gap: 2px;
+}
+.schedule-time-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.schedule-time-cell {
+  height: 46px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  color: var(--text-light);
+}
+.schedule-time-cell .num { font-size: 11px; font-weight: 700; color: var(--text-secondary); }
+
+.schedule-day-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.schedule-cell {
+  height: 46px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  cursor: pointer;
+  transition: all .15s;
+  overflow: hidden;
+  padding: 2px;
+  text-align: center;
+  position: relative;
+}
+.schedule-cell.course {
+  color: #fff;
+  font-weight: 600;
+  line-height: 1.1;
+  word-break: break-all;
+}
+.schedule-cell.course:hover { opacity: 0.85; transform: scale(0.97); }
+.schedule-cell.course .c-name { font-size: 8px; }
+.schedule-cell.course .c-loc { font-size: 7px; opacity: 0.8; margin-top: 1px; }
+.schedule-cell.empty {
+  background: var(--bg);
+  color: var(--text-light);
+  border: 1px dashed transparent;
+}
+.schedule-cell.empty:hover { border-color: var(--primary); color: var(--primary); }
+
+/* 底部极简Todo + DDL */
+.bottom-lists {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.mini-list {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: var(--shadow);
+}
+.mini-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.mini-list-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.mini-list-title .dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+}
+.mini-list-title .dot.green { background: var(--success); }
+.mini-list-title .dot.red { background: var(--accent); }
+.mini-list-add {
+  width: 22px; height: 22px;
+  border-radius: 6px;
+  background: var(--primary-light);
+  color: var(--primary);
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .2s;
+}
+.mini-list-add:hover { background: var(--primary); color: #fff; }
+
+.mini-items { display: flex; flex-direction: column; gap: 5px; }
+.mini-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text);
+}
+.mini-item .bracket {
+  width: 14px; height: 14px;
+  border-radius: 3px;
+  border: 1.5px solid var(--text-light);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  transition: all .2s;
+}
+.mini-item.done .bracket {
+  background: var(--success);
+  border-color: var(--success);
+  color: #fff;
+}
+.mini-item.done .bracket::before { content: '✓'; }
+.mini-item.done .item-text { text-decoration: line-through; color: var(--text-light); }
+.mini-item .item-text { flex: 1; line-height: 1.3; }
+.mini-item .item-date {
+  font-size: 10px;
+  color: var(--accent);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.mini-empty {
+  text-align: center;
+  padding: 12px 0;
+  font-size: 11px;
+  color: var(--text-light);
+}
+
+/* ============================================
+   月历页
+   ============================================ */
+
+.calendar-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.calendar-header-bar .month-title { font-size: 18px; font-weight: 700; color: var(--text); }
+.cal-nav-btns { display: flex; gap: 6px; }
+.cal-nav-btn {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-secondary);
+  display: flex; align-items: center; justify-content: center;
+}
+
+.calendar-card {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 12px 8px;
+  box-shadow: var(--shadow);
+  margin-bottom: 12px;
+}
+.cal-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  margin-bottom: 4px;
+}
+.cal-weekday {
+  text-align: center;
+  font-size: 10px;
+  color: var(--text-light);
+  font-weight: 500;
+  padding: 4px 0;
+}
+.cal-weekday.weekend { color: var(--accent); }
+.cal-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+}
+.cal-day {
+  aspect-ratio: 1.3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 3px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all .15s;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+  position: relative;
+}
+.cal-day:hover { background: var(--primary-light); }
+.cal-day.other-month { color: var(--text-light); opacity: 0.35; }
+.cal-day.today { background: var(--primary); color: #fff; font-weight: 700; }
+.cal-day.selected { background: var(--primary-light); color: var(--primary); font-weight: 700; }
+.cal-day.today.selected { background: var(--primary); color: #fff; }
+
+/* 月历日期中的标记 */
+.cal-markers {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  margin-top: 2px;
+  width: 100%;
+  padding: 0 2px;
+}
+.cal-marker-ddl {
+  font-size: 8px;
+  color: var(--accent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+  text-align: center;
+  line-height: 1.1;
+  max-width: 100%;
+}
+.cal-day.today .cal-marker-ddl { color: rgba(255,255,255,0.85); }
+
+.cal-dots {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+}
+.cal-dot-green {
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--success);
+}
+.cal-dot-red {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.cal-day.today .cal-dot-green { background: rgba(255,255,255,0.8); }
+.cal-day.today .cal-dot-red { background: #fff; }
+
+/* 日期详情 */
+.day-detail-card {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 14px;
+  box-shadow: var(--shadow);
+}
+.day-detail-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+.day-detail-section {
+  margin-bottom: 10px;
+}
+.day-detail-section:last-child { margin-bottom: 0; }
+.day-detail-section-title {
+  font-size: 11px;
+  color: var(--text-light);
+  font-weight: 600;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.day-detail-section-title::before {
+  content: '';
+  width: 5px; height: 5px;
+  border-radius: 50%;
+}
+.day-detail-section-title.green::before { background: var(--success); }
+.day-detail-section-title.red::before { background: var(--accent); width: 7px; height: 7px; }
+
+.detail-list-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 0;
+  font-size: 12px;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+}
+.detail-list-item:last-child { border-bottom: none; }
+.detail-list-item .bracket {
+  width: 13px; height: 13px;
+  border-radius: 3px;
+  border: 1.5px solid var(--text-light);
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9px;
+  cursor: pointer;
+}
+.detail-list-item.done .bracket { background: var(--success); border-color: var(--success); color: #fff; }
+.detail-list-item.done .bracket::before { content: '✓'; }
+.detail-list-item.done .item-text { text-decoration: line-through; color: var(--text-light); }
+.detail-list-item .item-text { flex: 1; }
+.detail-list-item .item-date { font-size: 10px; color: var(--accent); font-weight: 600; }
+
+/* ============================================
+   自习室页
+   ============================================ */
+
+.study-theme-switcher {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+.theme-dot {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 3px solid transparent;
+  transition: all .2s;
+}
+.theme-dot.active { border-color: var(--text); transform: scale(1.1); }
+.theme-dot.default { background: #4F6DF5; }
+.theme-dot.dark { background: #1A1A2E; }
+.theme-dot.forest { background: #2D8B56; }
+.theme-dot.sunset { background: #E8743B; }
+
+/* 番茄钟大组件 */
+.pomodoro-section {
+  background: var(--card);
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: var(--shadow);
+  margin-bottom: 14px;
+  position: relative;
+}
+.pomodoro-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.pomodoro-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+.pomodoro-add {
+  width: 26px; height: 26px;
+  border-radius: 8px;
+  background: var(--primary-light);
+  color: var(--primary);
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.pomodoro-add:hover { background: var(--primary); color: #fff; }
+
+.pomodoro-slider {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  padding-bottom: 4px;
+}
+.pomodoro-slider::-webkit-scrollbar { display: none; }
+
+.pomodoro-card {
+  flex-shrink: 0;
+  width: calc((100% - 30px) / 6);
+  aspect-ratio: 1;
+  border-radius: 10px;
+  background: var(--primary-light);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  scroll-snap-align: start;
+  transition: all .2s;
+  position: relative;
+  overflow: hidden;
+  border: 2px solid transparent;
+}
+.pomodoro-card:hover { transform: translateY(-2px); }
+.pomodoro-card.active { border-color: var(--primary); }
+.pomodoro-card .p-name {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--text);
+  text-align: center;
+  line-height: 1.2;
+  padding: 0 2px;
+}
+.pomodoro-card .p-time {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--primary);
+  margin-top: 3px;
+}
+.pomodoro-card .p-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  opacity: 0.3;
+}
+.pomodoro-card .p-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 当前番茄钟显示 */
+.pomodoro-active-display {
+  text-align: center;
+  padding: 16px 0 8px;
+}
+.pomodoro-timer {
+  font-size: 42px;
+  font-weight: 200;
+  color: var(--primary);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 2px;
+}
+.pomodoro-active-name {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+.pomodoro-controls {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 10px;
+}
+.pomo-btn {
+  padding: 7px 20px;
+  border-radius: 8px;
+  border: none;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.pomo-btn.primary { background: var(--primary); color: #fff; }
+.pomo-btn.secondary { background: var(--bg); color: var(--text-secondary); }
+
+/* 线上自习室区块 */
+.online-room-section {
+  background: var(--card);
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: var(--shadow);
+}
+.online-room-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.online-room-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.online-room-title .badge {
+  font-size: 9px;
+  padding: 2px 6px;
+  background: var(--primary-light);
+  color: var(--primary);
+  border-radius: 4px;
+  font-weight: 600;
+}
+.online-room-add {
+  width: 26px; height: 26px;
+  border-radius: 8px;
+  background: var(--primary-light);
+  color: var(--primary);
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.room-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.room-tab {
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 11px;
+  background: var(--bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-weight: 500;
+}
+.room-tab.active {
+  background: var(--primary);
+  color: #fff;
+}
+
+.room-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.room-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 10px;
+  background: var(--bg);
+  cursor: pointer;
+  transition: all .2s;
+}
+.room-card:hover { transform: translateX(2px); }
+.room-avatar {
+  width: 36px; height: 36px;
+  border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+  background-size: cover;
+  background-position: center;
+}
+.room-info { flex: 1; min-width: 0; }
+.room-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.room-meta {
+  font-size: 10px;
+  color: var(--text-light);
+  margin-top: 3px;
+}
+.room-people {
+  font-size: 10px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+/* ============================================
+   自习室详情页（聊天室）
+   ============================================ */
+
+.study-room-detail {
+  position: absolute;
+  inset: 0;
+  background: var(--bg);
+  z-index: 150;
+  display: none;
+  flex-direction: column;
+}
+.study-room-detail.show { display: flex; }
+
+.room-detail-header {
+  background: var(--card);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.room-back-btn {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: var(--bg);
+  font-size: 18px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-secondary);
+}
+.room-detail-info { flex: 1; }
+.room-detail-name { font-size: 15px; font-weight: 700; color: var(--text); }
+.room-detail-count { font-size: 11px; color: var(--text-light); margin-top: 2px; }
+.room-setting-btn {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: var(--bg);
+  font-size: 16px;
+  cursor: pointer;
+  color: var(--text-secondary);
+}
+
+/* 自习人员 */
+.room-members {
+  background: var(--card);
+  padding: 12px 16px;
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex-shrink: 0;
+}
+.room-members::-webkit-scrollbar { display: none; }
+.room-member {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.room-member .m-avatar {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+  background: var(--primary-light);
+  position: relative;
+}
+.room-member.own .m-avatar {
+  border: 2px solid var(--primary);
+}
+.room-member .m-status {
+  position: absolute;
+  bottom: -2px; right: -2px;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--success);
+  border: 2px solid var(--card);
+}
+.room-member .m-name {
+  font-size: 10px;
+  color: var(--text-secondary);
+  max-width: 50px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.room-member .m-id {
+  font-size: 9px;
+  color: var(--text-light);
+}
+
+/* 聊天区 */
+.room-chat {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.chat-msg {
+  display: flex;
+  gap: 8px;
+  max-width: 80%;
+}
+.chat-msg.self { align-self: flex-end; flex-direction: row-reverse; }
+.chat-avatar {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+  background: var(--primary-light);
+  flex-shrink: 0;
+}
+.chat-bubble {
+  background: var(--card);
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  color: var(--text);
+  line-height: 1.4;
+}
+.chat-msg.self .chat-bubble {
+  background: var(--primary);
+  color: #fff;
+}
+.chat-time {
+  font-size: 9px;
+  color: var(--text-light);
+  margin-top: 2px;
+}
+.chat-entry {
+  background: var(--card);
+  padding: 10px 14px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
+}
+.chat-entry input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  font-size: 13px;
+  background: var(--bg);
+  outline: none;
+  color: var(--text);
+}
+.chat-send {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+}
+
+.chat-disabled-banner {
+  background: var(--warning);
+  color: #fff;
+  padding: 8px 16px;
+  text-align: center;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+/* ============================================
+   我的页
+   ============================================ */
+
+.profile-header {
+  background: linear-gradient(135deg, var(--primary), #7B5CF5);
+  border-radius: 14px;
+  padding: 20px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow);
+}
+.profile-avatar {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px;
+  border: 2px solid rgba(255,255,255,0.3);
+}
+.profile-info .name { font-size: 16px; font-weight: 700; }
+.profile-info .school { font-size: 11px; opacity: 0.85; margin-top: 3px; }
+
+.settings-group {
+  background: var(--card);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  margin-bottom: 12px;
+}
+.settings-group-title {
+  font-size: 11px;
+  color: var(--text-light);
+  font-weight: 600;
+  padding: 0 4px 6px;
+  text-transform: uppercase;
+}
+.setting-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+}
+.setting-item:last-child { border-bottom: none; }
+.setting-icon {
+  width: 30px; height: 30px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.setting-info { flex: 1; }
+.setting-info .label { font-size: 13px; color: var(--text); font-weight: 500; }
+.setting-info .sublabel { font-size: 10px; color: var(--text-light); margin-top: 2px; }
+.setting-arrow { color: var(--text-light); font-size: 13px; }
+
+.toggle {
+  width: 40px; height: 24px;
+  border-radius: 12px;
+  background: var(--border);
+  position: relative;
+  cursor: pointer;
+  transition: background .2s;
+  flex-shrink: 0;
+}
+.toggle::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  transition: transform .2s;
+}
+.toggle.on { background: var(--success); }
+.toggle.on::after { transform: translateX(16px); }
+
+/* ============================================
+   Modal
+   ============================================ */
+.modal-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 200;
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+}
+.modal-overlay.show { display: flex; animation: fadeIn .2s; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.modal-sheet {
+  width: 100%;
+  background: var(--card);
+  border-radius: 20px 20px 0 0;
+  padding: 20px;
+  max-height: 75%;
+  overflow-y: auto;
+  animation: slideUp .3s ease;
+  color: var(--text);
+}
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.modal-title { font-size: 16px; font-weight: 700; color: var(--text); }
+.modal-close {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: var(--bg);
+  font-size: 14px;
+  cursor: pointer;
+  color: var(--text-light);
+  display: flex; align-items: center; justify-content: center;
+}
+
+.form-group { margin-bottom: 14px; }
+.form-label { font-size: 12px; color: var(--text-secondary); font-weight: 600; margin-bottom: 6px; display: block; }
+.form-input, .form-select, .form-textarea {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--bg);
+  outline: none;
+  transition: border .2s;
+  font-family: inherit;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--primary); background: var(--card); }
+
+.form-row { display: flex; gap: 10px; }
+.form-row .form-group { flex: 1; }
+
+.btn-primary {
+  width: 100%;
+  padding: 11px;
+  border-radius: 10px;
+  border: none;
+  background: var(--primary);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .2s;
+}
+.btn-primary:hover { filter: brightness(0.95); }
+.btn-secondary {
+  width: 100%;
+  padding: 11px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+.option-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.option-card {
+  padding: 16px;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  cursor: pointer;
+  text-align: center;
+  transition: all .2s;
+}
+.option-card:hover { border-color: var(--primary); background: var(--primary-light); }
+.option-card .opt-icon { font-size: 28px; margin-bottom: 6px; }
+.option-card .opt-title { font-size: 13px; font-weight: 600; color: var(--text); }
+.option-card .opt-desc { font-size: 10px; color: var(--text-light); margin-top: 3px; }
+
+/* Toast */
+.toast {
+  position: absolute;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-20px);
+  background: rgba(0,0,0,0.8);
+  color: #fff;
+  padding: 7px 14px;
+  border-radius: 10px;
+  font-size: 12px;
+  z-index: 300;
+  opacity: 0;
+  transition: all .3s;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.demo-banner {
+  position: fixed;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.7);
+  color: #fff;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 12px;
+  z-index: 999;
+  pointer-events: none;
+}
+</style>
+</head>
+<body>
+
+<div class="demo-banner">原型 v2 · 点击交互体验</div>
+
+<div class="phone-frame" id="phoneFrame">
+  <div class="notch"></div>
+
+  <!-- Status Bar -->
+  <div class="status-bar">
+    <span class="time">9:41</span>
+    <div class="icons">
+      <span>📶</span><span>📡</span><span>🔋</span>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <!-- App Header -->
+  <div class="app-header" id="appHeader">
+    <h1 id="pageTitle">我的课表</h1>
+    <div class="header-actions">
+      <button class="header-btn" onclick="showImportModal()" title="导入课表">📥</button>
+      <button class="header-btn" onclick="toggleEditSchedule()" title="编辑">✏️</button>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="content-area">
+
+    <!-- ===== 课表页 ===== -->
+    <div class="page active" id="page-schedule">
+      <!-- 名言警句 -->
+      <div class="quote-banner" onclick="editQuote()">
+        <div class="quote-text" id="quoteText">星光不问赶路人，时光不负有心人。</div>
+        <div class="quote-author" id="quoteAuthor">—— 佚名</div>
+      </div>
+
+      <!-- 周课表 -->
+      <div class="week-schedule">
+        <div class="schedule-header" id="scheduleHeader"></div>
+        <div class="schedule-body" id="scheduleBody"></div>
+      </div>
+
+      <!-- 底部极简 Todo + DDL -->
+      <div class="bottom-lists">
+        <div class="mini-list">
+          <div class="mini-list-header">
+            <div class="mini-list-title"><span class="dot green"></span>待办</div>
+            <button class="mini-list-add" onclick="showAddTodoModal()">+</button>
+          </div>
+          <div class="mini-items" id="miniTodoList"></div>
+        </div>
+        <div class="mini-list">
+          <div class="mini-list-header">
+            <div class="mini-list-title"><span class="dot red"></span>DDL</div>
+            <button class="mini-list-add" onclick="showAddDdlModal()">+</button>
+          </div>
+          <div class="mini-items" id="miniDdlList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 月历页 ===== -->
+    <div class="page" id="page-calendar">
+      <div class="calendar-header-bar">
+        <div class="month-title" id="calMonthTitle">2026年8月</div>
+        <div class="cal-nav-btns">
+          <button class="cal-nav-btn" onclick="changeMonth(-1)">‹</button>
+          <button class="cal-nav-btn" onclick="goToday()">·</button>
+          <button class="cal-nav-btn" onclick="changeMonth(1)">›</button>
+        </div>
+      </div>
+
+      <div class="calendar-card">
+        <div class="cal-weekdays">
+          <div class="cal-weekday weekend">日</div>
+          <div class="cal-weekday">一</div>
+          <div class="cal-weekday">二</div>
+          <div class="cal-weekday">三</div>
+          <div class="cal-weekday">四</div>
+          <div class="cal-weekday">五</div>
+          <div class="cal-weekday weekend">六</div>
+        </div>
+        <div class="cal-days" id="calDays"></div>
+      </div>
+
+      <div class="day-detail-card">
+        <div class="day-detail-title" id="dayDetailTitle">8月23日 周日</div>
+        <div id="dayDetailContent"></div>
+      </div>
+    </div>
+
+    <!-- ===== 自习室页 ===== -->
+    <div class="page" id="page-study">
+      <!-- 主题切换 -->
+      <div class="study-theme-switcher">
+        <div class="theme-dot default active" onclick="switchTheme('default', this)" title="默认"></div>
+        <div class="theme-dot dark" onclick="switchTheme('dark', this)" title="暗夜"></div>
+        <div class="theme-dot forest" onclick="switchTheme('forest', this)" title="森林"></div>
+        <div class="theme-dot sunset" onclick="switchTheme('sunset', this)" title="日落"></div>
+      </div>
+
+      <!-- 番茄钟组件 -->
+      <div class="pomodoro-section">
+        <div class="pomodoro-section-header">
+          <div class="pomodoro-title">🍅 我的番茄钟</div>
+          <button class="pomodoro-add" onclick="showAddPomodoroModal()">+</button>
+        </div>
+        <div class="pomodoro-slider" id="pomodoroSlider"></div>
+        <div class="pomodoro-active-display">
+          <div class="pomodoro-timer" id="pomoTimerDisplay">25:00</div>
+          <div class="pomodoro-active-name" id="pomoActiveName">标准番茄钟</div>
+          <div class="pomodoro-controls">
+            <button class="pomo-btn primary" id="pomoStartBtn" onclick="togglePomo()">开始</button>
+            <button class="pomo-btn secondary" onclick="resetPomo()">重置</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 线上自习室 -->
+      <div class="online-room-section">
+        <div class="online-room-header">
+          <div class="online-room-title">
+            🏠 线上自习室
+            <span class="badge">ONLINE</span>
+          </div>
+          <button class="online-room-add" onclick="showRoomAddModal()">+</button>
+        </div>
+        <div class="room-tabs">
+          <div class="room-tab active" onclick="switchRoomTab(this, 'my')">我的</div>
+          <div class="room-tab" onclick="switchRoomTab(this, 'all')">全部</div>
+        </div>
+        <div class="room-list" id="roomList"></div>
+      </div>
+    </div>
+
+    <!-- ===== 我的页 ===== -->
+    <div class="page" id="page-profile">
+      <div class="profile-header">
+        <div class="profile-avatar">👨‍🎓</div>
+        <div class="profile-info">
+          <div class="name">林同学</div>
+          <div class="school">某大学 · 计算机科学与技术 · 大三</div>
+        </div>
+      </div>
+
+      <div class="settings-group-title">提醒设置</div>
+      <div class="settings-group">
+        <div class="setting-item">
+          <div class="setting-icon" style="background:#FEF3C7">🔔</div>
+          <div class="setting-info">
+            <div class="label">提前一周提醒</div>
+          </div>
+          <div class="toggle on" onclick="toggleSwitch(this)"></div>
+        </div>
+        <div class="setting-item">
+          <div class="setting-icon" style="background:#FEE2E2">⏰</div>
+          <div class="setting-info">
+            <div class="label">提前一天提醒</div>
+          </div>
+          <div class="toggle on" onclick="toggleSwitch(this)"></div>
+        </div>
+        <div class="setting-item">
+          <div class="setting-icon" style="background:#DBEAFE">📱</div>
+          <div class="setting-info">
+            <div class="label">提醒方式</div>
+            <div class="sublabel">手机推送 + 小程序内提示</div>
+          </div>
+          <span class="setting-arrow">›</span>
+        </div>
+      </div>
+
+      <div class="settings-group-title">课表管理</div>
+      <div class="settings-group">
+        <div class="setting-item" onclick="showImportModal()">
+          <div class="setting-icon" style="background:#E0E7FF">📥</div>
+          <div class="setting-info">
+            <div class="label">重新导入课表</div>
+          </div>
+          <span class="setting-arrow">›</span>
+        </div>
+        <div class="setting-item" onclick="showToast('名言已更新')">
+          <div class="setting-icon" style="background:#F3E8FF">💬</div>
+          <div class="setting-info">
+            <div class="label">自定义名言</div>
+          </div>
+          <span class="setting-arrow">›</span>
+        </div>
+      </div>
+
+      <div class="settings-group-title">其他</div>
+      <div class="settings-group">
+        <div class="setting-item" onclick="showToast('数据已备份')">
+          <div class="setting-icon" style="background:#D1FAE5">☁️</div>
+          <div class="setting-info">
+            <div class="label">数据备份</div>
+          </div>
+          <span class="setting-arrow">›</span>
+        </div>
+        <div class="setting-item" onclick="showToast('v0.2.0')">
+          <div class="setting-icon" style="background:#FCE7F3">ℹ️</div>
+          <div class="setting-info">
+            <div class="label">关于</div>
+          </div>
+          <span class="setting-arrow">›</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 自习室详情页（聊天室） -->
+  <div class="study-room-detail" id="roomDetail">
+    <div class="room-detail-header">
+      <button class="room-back-btn" onclick="closeRoomDetail()">‹</button>
+      <div class="room-detail-info">
+        <div class="room-detail-name" id="detailRoomName">考研冲刺自习室</div>
+        <div class="room-detail-count" id="detailRoomCount">6人在线 · 已加入 23天</div>
+      </div>
+      <button class="room-setting-btn" onclick="showToast('房间设置')">⚙️</button>
+    </div>
+
+    <div class="room-members" id="roomMembers"></div>
+
+    <div class="room-chat" id="roomChat">
+      <div class="chat-msg">
+        <div class="chat-avatar">👩</div>
+        <div>
+          <div class="chat-bubble">今天效率好高呀，已经学了3小时了！</div>
+          <div class="chat-time">10:23</div>
+        </div>
+      </div>
+      <div class="chat-msg">
+        <div class="chat-avatar">👨‍💻</div>
+        <div>
+          <div class="chat-bubble">一起加油 💪</div>
+          <div class="chat-time">10:25</div>
+        </div>
+      </div>
+      <div class="chat-msg self">
+        <div class="chat-avatar">👨‍🎓</div>
+        <div>
+          <div class="chat-bubble">我也刚开了一个番茄钟</div>
+          <div class="chat-time">10:26</div>
+        </div>
+      </div>
+      <div class="chat-msg">
+        <div class="chat-avatar">👩‍🎓</div>
+        <div>
+          <div class="chat-bubble">大家晚上还在吗？我打算学到10点</div>
+          <div class="chat-time">10:30</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-disabled-banner" onclick="enableChat()">
+      💬 点击展开聊天窗口 · 新消息仅在展开后接收
+    </div>
+  </div>
+
+  <!-- Bottom Tab Bar -->
+  <div class="tab-bar">
+    <div class="tab-item active" onclick="switchTab('schedule', this)">
+      <div class="tab-icon">📋</div>
+      <div class="tab-label">课表</div>
+    </div>
+    <div class="tab-item" onclick="switchTab('calendar', this)">
+      <div class="tab-icon">📅</div>
+      <div class="tab-label">月历</div>
+    </div>
+    <div class="tab-item" onclick="switchTab('study', this)">
+      <div class="tab-icon">📚</div>
+      <div class="tab-label">自习</div>
+    </div>
+    <div class="tab-item" onclick="switchTab('profile', this)">
+      <div class="tab-icon">👤</div>
+      <div class="tab-label">我的</div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal-sheet" id="modalSheet"></div>
+  </div>
+</div>
+
+<script>
+// ===== 数据 =====
+const courseColors = ['#4F6DF5','#FF6B6B','#22C55E','#F59E0B','#8B5CF6','#06B6D4','#EC4899','#6366F1'];
+
+// 周课表数据: 每天6节，7天 (0=周日, 1=周一...6=周六)
+const weekSchedule = {
+  0: [null, null, null, null, null, null], // 周日
+  1: [ // 周一
+    {name:'高数', loc:'A-301', color:'#4F6DF5'},
+    {name:'高数', loc:'A-301', color:'#4F6DF5'},
+    {name:'数据结构', loc:'B-201', color:'#22C55E'},
+    {name:'英语', loc:'C-105', color:'#F59E0B'},
+    null, null
+  ],
+  2: [ // 周二
+    {name:'线代', loc:'A-205', color:'#FF6B6B'},
+    {name:'概率论', loc:'A-308', color:'#8B5CF6'},
+    null,
+    {name:'体育', loc:'体育馆', color:'#06B6D4'},
+    null, null
+  ],
+  3: [ // 周三
+    {name:'高数', loc:'A-301', color:'#4F6DF5'},
+    null,
+    {name:'操作系统', loc:'B-105', color:'#6366F1'},
+    {name:'数据结构', loc:'B-201', color:'#22C55E'},
+    null, null
+  ],
+  4: [ // 周四
+    null,
+    {name:'线代', loc:'A-205', color:'#FF6B6B'},
+    {name:'操作系统', loc:'B-105', color:'#6366F1'},
+    null,
+    {name:'英语口语', loc:'C-202', color:'#EC4899'},
+    null
+  ],
+  5: [ // 周五
+    {name:'概率论', loc:'A-308', color:'#8B5CF6'},
+    {name:'数据结构', loc:'B-201', color:'#22C55E'},
+    null,
+    {name:'OS实验', loc:'B-105', color:'#6366F1'},
+    null, null
+  ],
+  6: [null, null, null, null, null, null] // 周六
+};
+
+const periodTimes = [
+  {num:'1', time:'08:00'},
+  {num:'2', time:'08:55'},
+  {num:'3', time:'10:00'},
+  {num:'4', time:'10:55'},
+  {num:'5', time:'14:00'},
+  {num:'6', time:'15:50'}
+];
+
+// TodoList 数据
+let todoItems = [
+  { id:1, text:'数据结构实验报告3', done:false, date:'08/25' },
+  { id:2, text:'英语阅读笔记', done:false, date:'08/26' },
+  { id:3, text:'高数习题 Ch.5', done:true, date:'08/22' },
+];
+
+// DDL 数据
+let ddlItems = [
+  { id:1, text:'操作系统作业', date:'08/25' },
+  { id:2, text:'社团招新策划', date:'08/28' },
+  { id:3, text:'线代作业', date:'08/30' },
+  { id:4, text:'高数测验复习', date:'09/03' },
+];
+
+// 名言
+let quoteData = { text: '星光不问赶路人，时光不负有心人。', author: '—— 佚名' };
+
+// 月历数据 - Todo绿点 + DDL红点 + DDL名称
+const calTodoData = {
+  '2026-08-23': ['整理笔记', '复习单词'],
+  '2026-08-25': ['数据结构实验', '英语阅读'],
+  '2026-08-27': ['高数习题'],
+  '2026-08-28': ['概率论复习'],
+  '2026-09-02': ['OS实验报告'],
+};
+const calDdlData = {
+  '2026-08-23': [{name:'社团招新策划', short:'社团招新'}],
+  '2026-08-25': [{name:'操作系统作业', short:'OS作业'}, {name:'数据结构实验', short:'DS实验'}],
+  '2026-08-28': [{name:'概率论测验', short:'概率论'}],
+  '2026-08-30': [{name:'线性代数作业', short:'线代作业'}],
+  '2026-09-03': [{name:'高数测验', short:'高数测验'}],
+};
+
+// 番茄钟数据
+let pomodoroList = [
+  { id:1, name:'标准番茄', minutes:25, bg:null },
+  { id:2, name:'深度专注', minutes:45, bg:null },
+  { id:3, name:'超长学习', minutes:90, bg:null },
+  { id:4, name:'英语听力', minutes:30, bg:null },
+  { id:5, name:'阅读时间', minutes:20, bg:null },
+  { id:6, name:'代码冲刺', minutes:60, bg:null },
+];
+let activePomodoro = pomodoroList[0];
+let pomoMinutes = 25;
+let pomoSeconds = 0;
+let pomoInterval = null;
+let pomoRunning = false;
+
+// 线上自习室数据
+let myRooms = [
+  { id:1, name:'考研冲刺自习室', bg:'linear-gradient(135deg,#667eea,#764ba2)', people:6, joinDays:23, isOwner:true },
+  { id:2, name:'早起打卡群', bg:'linear-gradient(135deg,#f093fb,#f5576c)', people:12, joinDays:15, isOwner:false },
+  { id:3, name:'算法刷题室', bg:'linear-gradient(135deg,#4facfe,#00f2fe)', people:8, joinDays:7, isOwner:false },
+];
+let allRooms = [
+  ...myRooms,
+  { id:4, name:'雅思备考室', bg:'linear-gradient(135deg,#43e97b,#38f9d7)', people:15, joinDays:0, isOwner:false },
+  { id:5, name:'CPA冲刺营', bg:'linear-gradient(135deg,#fa709a,#fee140)', people:20, joinDays:0, isOwner:false },
+  { id:6, name:'深夜自习室', bg:'linear-gradient(135deg,#30cfd0,#330867)', people:25, joinDays:0, isOwner:false },
+  { id:7, name:'法考加油团', bg:'linear-gradient(135deg,#a8edea,#fed6e3)', people:18, joinDays:0, isOwner:false },
+  { id:8, name:'考研数学', bg:'linear-gradient(135deg,#ff9a9e,#fecfef)', people:30, joinDays:0, isOwner:false },
+];
+let currentRoomTab = 'my';
+
+// 自习室成员示例
+const roomMembersSample = [
+  { name:'小明同学', id:'stu_001', avatar:'👨', isOnline:true, isOwner:true },
+  { name:'小红', id:'stu_002', avatar:'👩', isOnline:true },
+  { name:'阿杰', id:'stu_003', avatar:'👨‍💻', isOnline:true },
+  { name:'学霸瑶', id:'stu_004', avatar:'👩‍🎓', isOnline:true },
+  { name:'小林', id:'stu_005', avatar:'👨‍🎓', isOnline:true, isMe:true },
+  { name:'阿May', id:'stu_006', avatar:'👩‍💼', isOnline:false },
+];
+
+// 月历状态
+let calendarYear = 2026;
+let calendarMonth = 7; // 0-indexed (August)
+let selectedDate = '2026-08-23';
+let isEditingSchedule = false;
+
+// ===== 渲染周课表 =====
+function renderWeekSchedule() {
+  const today = new Date();
+  const todayDay = today.getDay();
+  
+  // Header
+  const header = document.getElementById('scheduleHeader');
+  const dayNames = ['日','一','二','三','四','五','六'];
+  let headerHtml = '<div style="width:28px"></div>';
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - today.getDay() + i);
+    const isToday = i === todayDay;
+    headerHtml += `<div class="schedule-header-day ${isToday ? 'today' : ''}">
+      周${dayNames[i]}
+      <span class="day-num">${d.getDate()}</span>
+    </div>`;
+  }
+  header.innerHTML = headerHtml;
+
+  // Body
+  const body = document.getElementById('scheduleBody');
+  let bodyHtml = '<div class="schedule-time-col">';
+  periodTimes.forEach(p => {
+    bodyHtml += `<div class="schedule-time-cell"><div class="num">${p.num}</div>${p.time}</div>`;
+  });
+  bodyHtml += '</div>';
+
+  for (let day = 0; day < 7; day++) {
+    bodyHtml += '<div class="schedule-day-col">';
+    const dayCourses = weekSchedule[day] || [];
+    for (let p = 0; p < 6; p++) {
+      const course = dayCourses[p];
+      if (course) {
+        bodyHtml += `<div class="schedule-cell course" style="background:${course.color}" onclick="editCourse(${day},${p})">
+          <div>
+            <div class="c-name">${course.name}</div>
+            <div class="c-loc">${course.loc}</div>
+          </div>
+        </div>`;
+      } else {
+        bodyHtml += `<div class="schedule-cell empty" onclick="addCourse(${day},${p})">${isEditingSchedule ? '+' : ''}</div>`;
+      }
+    }
+    bodyHtml += '</div>';
+  }
+  body.innerHTML = bodyHtml;
+}
+
+function toggleEditSchedule() {
+  isEditingSchedule = !isEditingSchedule;
+  showToast(isEditingSchedule ? '编辑模式：点击空位添加' : '已退出编辑');
+  renderWeekSchedule();
+}
+
+function editCourse(day, period) {
+  const course = weekSchedule[day][period];
+  const html = `
+    <div class="modal-header">
+      <div class="modal-title">编辑课程</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">课程名称</label>
+      <input class="form-input" id="cName" value="${course.name}">
+    </div>
+    <div class="form-group">
+      <label class="form-label">上课地点</label>
+      <input class="form-input" id="cLoc" value="${course.loc}">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">星期</label>
+        <select class="form-select" id="cDay">
+          ${['日','一','二','三','四','五','六'].map((d,i) => `<option value="${i}" ${i===day?'selected':''}>周${d}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">节次</label>
+        <select class="form-select" id="cPeriod">
+          ${periodTimes.map((p,i) => `<option value="${i}" ${i===period?'selected':''}>第${p.num}节</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="saveCourse(${day},${period})">保存</button>
+    <button class="btn-secondary" style="color:var(--accent)" onclick="deleteCourse(${day},${period})">删除课程</button>
+  `;
+  showModal(html);
+}
+
+function addCourse(day, period) {
+  if (!isEditingSchedule) return;
+  const html = `
+    <div class="modal-header">
+      <div class="modal-title">添加课程</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">课程名称</label>
+      <input class="form-input" id="cName" placeholder="如：高等数学">
+    </div>
+    <div class="form-group">
+      <label class="form-label">上课地点</label>
+      <input class="form-input" id="cLoc" placeholder="如：A-301">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">星期</label>
+        <select class="form-select" id="cDay">
+          ${['日','一','二','三','四','五','六'].map((d,i) => `<option value="${i}" ${i===day?'selected':''}>周${d}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">节次</label>
+        <select class="form-select" id="cPeriod">
+          ${periodTimes.map((p,i) => `<option value="${i}" ${i===period?'selected':''}>第${p.num}节</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="saveNewCourse()">保存</button>
+  `;
+  showModal(html);
+}
+
+function saveCourse(oldDay, oldPeriod) {
+  const name = document.getElementById('cName').value.trim();
+  const loc = document.getElementById('cLoc').value.trim();
+  const newDay = parseInt(document.getElementById('cDay').value);
+  const newPeriod = parseInt(document.getElementById('cPeriod').value);
+  if (!name) { showToast('请输入课程名称'); return; }
+  const oldColor = weekSchedule[oldDay][oldPeriod]?.color || courseColors[0];
+  weekSchedule[oldDay][oldPeriod] = null;
+  if (!weekSchedule[newDay]) weekSchedule[newDay] = [];
+  weekSchedule[newDay][newPeriod] = { name, loc, color: oldColor };
+  closeModal();
+  showToast('已保存');
+  renderWeekSchedule();
+}
+
+function saveNewCourse() {
+  const name = document.getElementById('cName').value.trim();
+  const loc = document.getElementById('cLoc').value.trim();
+  const day = parseInt(document.getElementById('cDay').value);
+  const period = parseInt(document.getElementById('cPeriod').value);
+  if (!name) { showToast('请输入课程名称'); return; }
+  if (!weekSchedule[day]) weekSchedule[day] = [];
+  weekSchedule[day][period] = { name, loc, color: courseColors[Math.floor(Math.random()*courseColors.length)] };
+  closeModal();
+  showToast('已添加');
+  renderWeekSchedule();
+}
+
+function deleteCourse(day, period) {
+  weekSchedule[day][period] = null;
+  closeModal();
+  showToast('已删除');
+  renderWeekSchedule();
+}
+
+// ===== 名言 =====
+function editQuote() {
+  const html = `
+    <div class="modal-header">
+      <div class="modal-title">自定义名言</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">名言内容</label>
+      <textarea class="form-textarea" id="quoteInput" rows="3">${quoteData.text}</textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">作者/出处</label>
+      <input class="form-input" id="quoteAuthorInput" value="${quoteData.author}">
+    </div>
+    <button class="btn-primary" onclick="saveQuote()">保存</button>
+  `;
+  showModal(html);
+}
+
+function saveQuote() {
+  const text = document.getElementById('quoteInput').value.trim();
+  const author = document.getElementById('quoteAuthorInput').value.trim();
+  if (!text) { showToast('请输入名言内容'); return; }
+  quoteData.text = text;
+  quoteData.author = author;
+  document.getElementById('quoteText').textContent = text;
+  document.getElementById('quoteAuthor').textContent = author;
+  closeModal();
+  showToast('名言已更新');
+}
+
+// ===== 极简 TodoList =====
+function renderMiniTodo() {
+  const container = document.getElementById('miniTodoList');
+  if (todoItems.length === 0) {
+    container.innerHTML = '<div class="mini-empty">暂无待办</div>';
+    return;
+  }
+  container.innerHTML = todoItems.slice(0, 5).map(item => `
+    <div class="mini-item ${item.done ? 'done' : ''}" onclick="toggleTodo(${item.id})">
+      <div class="bracket"></div>
+      <span class="item-text">${item.text}</span>
+    </div>
+  `).join('');
+}
+
+function toggleTodo(id) {
+  const item = todoItems.find(t => t.id === id);
+  if (item) {
+    item.done = !item.done;
+    renderMiniTodo();
+    renderCalendar();
+  }
+}
+
+function showAddTodoModal() {
+  const html = `
+    <div class="modal-header">
+      <div class="modal-title">添加待办</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">待办内容</label>
+      <input class="form-input" id="todoText" placeholder="输入待办事项">
+    </div>
+    <div class="form-group">
+      <label class="form-label">日期 (可选)</label>
+      <input class="form-input" id="todoDate" placeholder="如：08/25 (月/日)">
+    </div>
+    <button class="btn-primary" onclick="addTodo()">添加</button>
+  `;
+  showModal(html);
+}
+
+function addTodo() {
+  const text = document.getElementById('todoText').value.trim();
+  const date = document.getElementById('todoDate').value.trim();
+  if (!text) { showToast('请输入待办内容'); return; }
+  const newId = Math.max(...todoItems.map(t => t.id), 0) + 1;
+  todoItems.unshift({ id: newId, text, done: false, date: date || null });
+  closeModal();
+  renderMiniTodo();
+  renderCalendar();
+  showToast('已添加，同步到月历');
+}
+
+// ===== DDL List =====
+function renderMiniDdl() {
+  const container = document.getElementById('miniDdlList');
+  if (ddlItems.length === 0) {
+    container.innerHTML = '<div class="mini-empty">暂无DDL</div>';
+    return;
+  }
+  // 按日期排序
+  const sorted = [...ddlItems].sort((a, b) => {
+    const [am, ad] = a.date.split('/').map(Number);
+    const [bm, bd] = b.date.split('/').map(Number);
+    return am === bm ? ad - bd : am - bm;
+  });
+  container.innerHTML = sorted.slice(0, 5).map(item => `
+    <div class="mini-item" onclick="showToast('${item.text}')">
+      <span class="item-text">${item.text}</span>
+      <span class="item-date">${item.date}</span>
+    </div>
+  `).join('');
+}
+
+function showAddDdlModal() {
+  const html = `
+    <div class="modal-header">
+      <div class="modal-title">添加DDL</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">DDL名称</label>
+      <input class="form-input" id="ddlText" placeholder="如：操作系统作业">
+    </div>
+    <div class="form-group">
+      <label class="form-label">截止日期</label>
+      <input class="form-input" id="ddlDate" placeholder="格式：09/3 (月/日)">
+    </div>
+    <button class="btn-primary" onclick="addDdl()">添加</button>
+  `;
+  showModal(html);
+}
+
+function addDdl() {
+  const text = document.getElementById('ddlText').value.trim();
+  const date = document.getElementById('ddlDate').value.trim();
+  if (!text) { showToast('请输入DDL名称'); return; }
+  if (!date || !/^\d{1,2}\/\d{1,2}$/.test(date)) { showToast('日期格式：09/3'); return; }
+  const newId = Math.max(...ddlItems.map(t => t.id), 0) + 1;
+  ddlItems.unshift({ id: newId, text, date });
+  closeModal();
+  renderMiniDdl();
+  renderCalendar();
+  showToast('已添加，同步到月历');
+}
+
+// ===== 月历 =====
+function renderCalendar() {
+  const title = `${calendarYear}年${calendarMonth + 1}月`;
+  document.getElementById('calMonthTitle').textContent = title;
+  
+  const firstDay = new Date(calendarYear, calendarMonth, 1).getDay();
+  const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+  const prevMonthDays = new Date(calendarYear, calendarMonth, 0).getDate();
+  
+  const container = document.getElementById('calDays');
+  container.innerHTML = '';
+  
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+  
+  // 上个月
+  for (let i = 0; i < firstDay; i++) {
+    const day = prevMonthDays - firstDay + i + 1;
+    const el = document.createElement('div');
+    el.className = 'cal-day other-month';
+    el.innerHTML = `<span>${day}</span>`;
+    container.appendChild(el);
+  }
+  
+  // 本月
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${calendarYear}-${String(calendarMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const todos = calTodoData[dateStr] || [];
+    const ddls = calDdlData[dateStr] || [];
+    const isToday = dateStr === todayStr;
+    const isSelected = dateStr === selectedDate;
+    
+    let markersHtml = '<div class="cal-markers">';
+    
+    // DDL名称（第一个）
+    if (ddls.length > 0) {
+      markersHtml += `<div class="cal-marker-ddl">${ddls[0].short}</div>`;
+    }
+    
+    // 点标记
+    if (todos.length > 0 || ddls.length > 0) {
+      markersHtml += '<div class="cal-dots">';
+      if (todos.length > 0) markersHtml += '<div class="cal-dot-green"></div>';
+      if (ddls.length > 0) markersHtml += '<div class="cal-dot-red"></div>';
+      markersHtml += '</div>';
+    }
+    markersHtml += '</div>';
+    
+    const el = document.createElement('div');
+    el.className = 'cal-day' + (isToday ? ' today' : '') + (isSelected && !isToday ? ' selected' : '');
+    el.innerHTML = `<span>${d}</span>${markersHtml}`;
+    el.onclick = () => selectDate(dateStr);
+    container.appendChild(el);
+  }
+  
+  // 下个月补齐
+  const totalCells = firstDay + daysInMonth;
+  const remaining = (7 - (totalCells % 7)) % 7;
+  for (let i = 1; i <= remaining; i++) {
+    const el = document.createElement('div');
+    el.className = 'cal-day other-month';
+    el.innerHTML = `<span>${i}</span>`;
+    container.appendChild(el);
+  }
+  
+  renderDayDetail();
+}
+
+function selectDate(dateStr) {
+  selectedDate = dateStr;
+  renderCalendar();
+}
+
+function renderDayDetail() {
+  const [y, m, d] = selectedDate.split('-');
+  const date = new Date(parseInt(y), parseInt(m)-1, parseInt(d));
+  const dayNames = ['周日','周一','周二','周三','周四','周五','周六'];
+  document.getElementById('dayDetailTitle').textContent = `${parseInt(m)}月${parseInt(d)}日 ${dayNames[date.getDay()]}`;
+  
+  const todos = calTodoData[selectedDate] || [];
+  const ddls = calDdlData[selectedDate] || [];
+  
+  const container = document.getElementById('dayDetailContent');
+  let html = '';
+  
+  // Todo 部分
+  html += `<div class="day-detail-section">
+    <div class="day-detail-section-title green">待办事项 (${todos.length})</div>`;
+  if (todos.length === 0) {
+    html += '<div style="font-size:11px;color:var(--text-light);padding:6px 0;">暂无待办</div>';
+  } else {
+    todos.forEach((t, i) => {
+      html += `<div class="detail-list-item" onclick="this.classList.toggle('done')">
+        <div class="bracket"></div>
+        <span class="item-text">${t}</span>
+      </div>`;
+    });
+  }
+  html += '</div>';
+  
+  // DDL 部分
+  html += `<div class="day-detail-section">
+    <div class="day-detail-section-title red">Deadline (${ddls.length})</div>`;
+  if (ddls.length === 0) {
+    html += '<div style="font-size:11px;color:var(--text-light);padding:6px 0;">暂无Deadline</div>';
+  } else {
+    ddls.forEach(d => {
+      html += `<div class="detail-list-item">
+        <span class="item-text">${d.name}</span>
+        <span class="item-date">截止</span>
+      </div>`;
+    });
+  }
+  html += '</div>';
+  
+  container.innerHTML = html;
+}
+
+function changeMonth(delta) {
+  calendarMonth += delta;
+  if (calendarMonth < 0) { calendarMonth = 11; calendarYear--; }
+  if (calendarMonth > 11) { calendarMonth = 0; calendarYear++; }
+  renderCalendar();
+}
+
+function goToday() {
+  const today = new Date();
+  calendarYear = today.getFullYear();
+  calendarMonth = today.getMonth();
+  selectedDate = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+  renderCalendar();
+}
+
+// ===== 番茄钟 =====
+function renderPomodoro() {
+  const container = document.getElementById('pomodoroSlider');
+  container.innerHTML = pomodoroList.map(p => `
+    <div class="pomodoro-card ${activePomodoro.id === p.id ? 'active' : ''}" onclick="selectPomodoro(${p.id})">
+      ${p.bg ? `<div class="p-bg" style="background-image:url(${p.bg})"></div>` : ''}
+      <div class="p-content">
+        <div class="p-name">${p.name}</div>
+        <div class="p-time">${p.minutes}分</div>
+      </div>
+    </div>
+  `).join('');
+  
+  updatePomoDisplay();
+}
+
+function selectPomodoro(id) {
+  const p = pomodoroList.find(x => x.id === id);
+  if (!p) return;
+  activePomodoro = p;
+  pomoMinutes = p.minutes;
+  pomoSeconds = 0;
+  resetPomo();
+  renderPomodoro();
+}
+
+function updatePomoDisplay() {
+  const m = String(pomoMinutes).padStart(2,'0');
+  const s = String(pomoSeconds).padStart(2,'0');
+  document.getElementById('pomoTimerDisplay').textContent = `${m}:${s}`;
+  document.getElementById('pomoActiveName').textContent = activePomodoro.name;
+}
+
+function togglePomo() {
+  const btn = document.getElementById('pomoStartBtn');
+  if (pomoRunning) {
+    clearInterval(pomoInterval);
+    pomoRunning = false;
+    btn.textContent = '继续';
+  } else {
+    pomoRunning = true;
+    btn.textContent = '暂停';
+    pomoInterval = setInterval(() => {
+      if (pomoSeconds === 0) {
+        if (pomoMinutes === 0) {
+          clearInterval(pomoInterval);
+          pomoRunning = false;
+          btn.textContent = '开始';
+          showToast('专注完成！休息一下吧');
+          pomoMinutes = activePomodoro.minutes;
+          updatePomoDisplay();
+          return;
+        }
+        pomoMinutes--;
+        pomoSeconds = 59;
+      } else {
+        pomoSeconds--;
+      }
+      updatePomoDisplay();
+    }, 1000);
+  }
+}
+
+function resetPomo() {
+  clearInterval(pomoInterval);
+  pomoRunning = false;
+  pomoMinutes = activePomodoro.minutes;
+  pomoSeconds = 0;
+  document.getElementById('pomoStartBtn').textContent = '开始';
+  updatePomoDisplay();
+}
+
+function showAddPomodoroModal() {
+  const html = `
+    <div class="modal-header">
+      <div class="modal-title">创建番茄钟</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">名称</label>
+      <input class="form-input" id="pomoName" placeholder="如：英语听力">
+    </div>
+    <div class="form-group">
+      <label class="form-label">专注时长 (20-180分钟)</label>
+      <input type="number" class="form-input" id="pomoMinutes" placeholder="25" min="20" max="180">
+    </div>
+    <div class="form-group">
+      <label class="form-label">背景图片 (可选)</label>
+      <input class="form-input" id="pomoBg" placeholder="输入图片URL，可留空">
+    </div>
+    <button class="btn-primary" onclick="createPomodoro()">创建</button>
+  `;
+  showModal(html);
+}
+
+function createPomodoro() {
+  const name = document.getElementById('pomoName').value.trim();
+  const minutes = parseInt(document.getElementById('pomoMinutes').value);
+  const bg = document.getElementById('pomoBg').value.trim();
+  if (!name) { showToast('请输入名称'); return; }
+  if (!minutes || minutes < 20 || minutes > 180) { showToast('时长需在20-180分钟'); return; }
+  const newId = Math.max(...pomodoroList.map(p => p.id), 0) + 1;
+  pomodoroList.push({ id: newId, name, minutes, bg: bg || null });
+  closeModal();
+  renderPomodoro();
+  showToast('番茄钟已创建');
+}
+
+// ===== 主题切换 =====
+function switchTheme(theme, el) {
+  const frame = document.getElementById('phoneFrame');
+  frame.classList.remove('theme-dark', 'theme-forest', 'theme-sunset');
+  if (theme !== 'default') frame.classList.add('theme-' + theme);
+  
+  document.querySelectorAll('.theme-dot').forEach(d => d.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ===== 线上自习室 =====
+function renderRoomList() {
+  const list = currentRoomTab === 'my' ? myRooms : allRooms;
+  const container = document.getElementById('roomList');
+  // 按加入时长排序（我的）或人数排序（全部）
+  const sorted = currentRoomTab === 'my'
+    ? [...list].sort((a, b) => b.joinDays - a.joinDays)
+    : [...list].sort((a, b) => b.people - a.people);
+  
+  container.innerHTML = sorted.map(room => `
+    <div class="room-card" onclick="openRoomDetail(${room.id})">
+      <div class="room-avatar" style="background:${room.bg}">🏠</div>
+      <div class="room-info">
+        <div class="room-name">${room.name}${room.isOwner ? ' 👑' : ''}</div>
+        <div class="room-meta">${room.joinDays > 0 ? '已加入' + room.joinDays + '天' : '未加入'} · ${room.people}人在线</div>
+      </div>
+      <div class="room-people">${room.people}人</div>
+    </div>
+  `).join('');
+}
+
+function switchRoomTab(el, tab) {
+  document.querySelectorAll('.room-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  currentRoomTab = tab;
+  renderRoomList();
+}
+
+function showRoomAddModal() {
+  const html = `
+    <div class="modal-header">
+      <div class="modal-title">线上自习室</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="option-grid">
+      <div class="option-card" onclick="showCreateRoomModal()">
+        <div class="opt-icon">➕</div>
+        <div class="opt-title">创建自习室</div>
+        <div class="opt-desc">自己当室主</div>
+      </div>
+      <div class="option-card" onclick="showJoinRoomModal()">
+        <div class="opt-icon">🚪</div>
+        <div class="opt-title">加入自习室</div>
+        <div class="opt-desc">输入房间号</div>
+      </div>
+    </div>
+  `;
+  showModal(html);
+}
+
+function showCreateRoomModal() {
+  const html = `
+    <div class="modal-header">
+      <div class="modal-title">创建自习室</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">房间名称</label>
+      <input class="form-input" id="roomName" placeholder="给自习室起个名字">
+    </div>
+    <div class="form-group">
+      <label class="form-label">房间背景 (可选)</label>
+      <input class="form-input" id="roomBg" placeholder="输入背景图URL">
+    </div>
+    <button class="btn-primary" onclick="createRoom()">创建</button>
+  `;
+  showModal(html);
+}
+
+function createRoom() {
+  const name = document.getElementById('roomName').value.trim();
+  const bg = document.getElementById('roomBg').value.trim();
+  if (!name) { showToast('请输入房间名称'); return; }
+  const newId = Math.max(...allRooms.map(r => r.id), 0) + 1;
+  const newRoom = {
+    id: newId,
+    name,
+    bg: bg ? `url(${bg})` : 'linear-gradient(135deg,#667eea,#764ba2)',
+    people: 1,
+    joinDays: 0,
+    isOwner: true
+  };
+  allRooms.unshift(newRoom);
+  myRooms.unshift(newRoom);
+  closeModal();
+  renderRoomList();
+  showToast('自习室创建成功');
+}
+
+function showJoinRoomModal() {
+  const html = `
+    <div class="modal-header">
+      <div class="modal-title">加入自习室</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">房间号</label>
+      <input class="form-input" id="roomCode" placeholder="输入房间号">
+    </div>
+    <button class="btn-primary" onclick="joinRoom()">加入</button>
+  `;
+  showModal(html);
+}
+
+function joinRoom() {
+  const code = document.getElementById('roomCode').value.trim();
+  if (!code) { showToast('请输入房间号'); return; }
+  // 模拟加入
+  const newRoom = {
+    id: Date.now(),
+    name: `房间 ${code}`,
+    bg: 'linear-gradient(135deg,#43e97b,#38f9d7)',
+    people: 5,
+    joinDays: 0,
+    isOwner: false
+  };
+  myRooms.unshift(newRoom);
+  closeModal();
+  renderRoomList();
+  showToast('加入成功');
+}
+
+// ===== 自习室详情（聊天室） =====
+function openRoomDetail(roomId) {
+  const room = allRooms.find(r => r.id === roomId);
+  if (!room) return;
+  document.getElementById('detailRoomName').textContent = room.name + (room.isOwner ? ' 👑' : '');
+  document.getElementById('detailRoomCount').textContent = `${room.people}人在线 · ${room.joinDays > 0 ? '已加入 ' + room.joinDays + ' 天' : '新加入'}`;
+  
+  renderRoomMembers();
+  document.getElementById('roomDetail').classList.add('show');
+}
+
+function renderRoomMembers() {
+  const container = document.getElementById('roomMembers');
+  container.innerHTML = roomMembersSample.map(m => `
+    <div class="room-member ${m.isMe ? 'own' : ''}">
+      <div class="m-avatar">
+        ${m.avatar}
+        ${m.isOnline ? '<div class="m-status"></div>' : ''}
+      </div>
+      <div class="m-name">${m.name}</div>
+      <div class="m-id">${m.id}</div>
+    </div>
+  `).join('');
+}
+
+function closeRoomDetail() {
+  document.getElementById('roomDetail').classList.remove('show');
+}
+
+function enableChat() {
+  showToast('已展开聊天，开始接收消息');
+  // 模拟展开后出现消息
+  setTimeout(() => {
+    const chat = document.getElementById('roomChat');
+    const newMsg = document.createElement('div');
+    newMsg.className = 'chat-msg';
+    newMsg.innerHTML = `
+      <div class="chat-avatar">👩</div>
+      <div>
+        <div class="chat-bubble">欢迎回来~ 今天学什么？</div>
+        <div class="chat-time">刚</div>
+      </div>
+    `;
+    chat.appendChild(newMsg);
+    chat.scrollTop = chat.scrollHeight;
+  }, 800);
+}
+
+// ===== Tab 切换 =====
+function switchTab(page, tabEl) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  
+  document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+  tabEl.classList.add('active');
+  
+  const titles = { schedule:'我的课表', calendar:'月历', study:'自习室', profile:'我的' };
+  document.getElementById('pageTitle').textContent = titles[page];
+  
+  const headerActions = document.querySelector('.header-actions');
+  if (page === 'schedule') {
+    headerActions.style.display = '';
+  } else {
+    headerActions.style.display = 'none';
+  }
+  
+  closeRoomDetail();
+  document.querySelector('.content-area').scrollTop = 0;
+}
+
+// ===== Modal =====
+function showModal(html) {
+  document.getElementById('modalSheet').innerHTML = html;
+  document.getElementById('modalOverlay').classList.add('show');
+}
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('show');
+}
+document.getElementById('modalOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+function toggleSwitch(el) {
+  event.stopPropagation();
+  el.classList.toggle('on');
+}
+
+function showImportModal() {
+  const html = `
+    <div class="modal-header">
+      <div class="modal-title">导入课表</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="option-grid">
+      <div class="option-card" onclick="simulateImport('拍照')">
+        <div class="opt-icon">📷</div>
+        <div class="opt-title">拍照识别</div>
+        <div class="opt-desc">拍摄课表照片</div>
+      </div>
+      <div class="option-card" onclick="simulateImport('相册')">
+        <div class="opt-icon">🖼️</div>
+        <div class="opt-title">从相册选择</div>
+        <div class="opt-desc">上传课表截图</div>
+      </div>
+    </div>
+    <div style="margin-top:14px;padding:12px;background:var(--primary-light);border-radius:10px;font-size:12px;color:var(--text-secondary);line-height:1.6">
+      支持识别教务系统课表截图、手写课表照片。识别后可修改。
+    </div>
+  `;
+  showModal(html);
+}
+
+function simulateImport(type) {
+  closeModal();
+  showToast('正在识别课表...');
+  setTimeout(() => {
+    showToast('识别完成! 已导入课程');
+    renderWeekSchedule();
+  }, 1500);
+}
+
+// ===== Toast =====
+let toastTimer;
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 1800);
+}
+
+// ===== 初始化 =====
+renderWeekSchedule();
+renderMiniTodo();
+renderMiniDdl();
+renderCalendar();
+renderPomodoro();
+renderRoomList();
+</script>
+
+
+</body></html>
